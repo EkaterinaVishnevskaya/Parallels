@@ -43,7 +43,8 @@ void merge_sort(std::vector<int> &v, int l, int r)
     else 
     {
         std::future<void> fut0 = std::async(merge_sort, v, l, (r+l)/2-1);
-        std::future<void> fut1 = std::async(std::launch::deferred | std::launch::async, merge_sort, v, (r+l)/2, r);int p=l;
+        std::future<void> fut1 = std::async(std::launch::deferred | std::launch::async, merge_sort, v, (r+l)/2, r);
+        int p=l;
         int q=(r+l)/2;
         std::vector<int> w;
         for (int i=l; i<=r; i++)
