@@ -6,137 +6,68 @@
 //  Copyright © 2016 Екатерина Вишневская. All rights reserved.
 //
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<cstdlib>
-#include<string>
-#include<vector>
-#include<list>
-#include<iostream>
-#include<math.h>
+#include <iostream>
+#include <vector>
+#include <list>
+#include <forward_list>
+#include <shared_mutex>
+#include <array>
 
-using namespace std;
-
-template <class T>
-class hash_table{
-private:
-    vector<list<T>> table;
-    int size;
-    int m;
+template <typename ElementType, class HashFunction = std::hash<ElementType>>
+class HashTable{
 public:
-    hash_table(int size_,int m_);
-    hash_table(const hash_table& table);
-    bool add(T el);
-    bool remove(T el);
-    bool contains(T el);
-    int size1();
-    friend ostream& operator <<(ostream& cout_, hash_table table1);
-    ~hash_table();
+    void add(const ElementType& t) {
+        int hash = HashFunction(t);
+        size_t lockNumber = hash%locks.size();
+        std::lock_guard<std::shared_mutex> sharedLocker(mut);
+        size_t buckNum = hash%data.size();
+        for (auto iter:data[buckNum])
+        {
+            if (Comparator()(iter, t)){
+                return;
+            }
+        }
+        data[buckNum].push_front(t);
+        size++;
+        //ResizeIfNeeded();
+    }
+    //void add(const ElementType& t, const HashFunction& hasher) {
+    //    int hash = hasher(t);
+    //}
+private:
+    std::vector<std::shared_timed_mutex> locks;
+    std::atomic<int> size;
+    const double policy;
+    std::vector<std::forward_list<ElementType>> data;
 };
 
-template <class T>
-hash_table<T>::hash_table(int size_,int m_){
-    vector<list<string>> table_;
-    size=size_;
-    table_.reserve(size);
-    table=table_;
-    m=m_;
+struct Str {
+    int a;
+    int b;
+};
+
+namespace std {
+    template<>
+    struct hash<Str>
+    {
+        size_t operator ()(const Str& key) const
+        {
+            return key.a+(key.b << 16);
+        }
+    };
 }
 
-template <class T>
-hash_table<T>::hash_table(const hash_table& table_)
+struct SHash
 {
-    size=table_.size;
-    table=table_.table;
-}
+    size_t operator ()(const Str& key) const
+    {
+        return key.a+(key.b << 16);
+    }
+};
 
-template <class T>
-bool hash_table<T>::add(T el){
-    size_t h=std::hash(el);
-    if(h>=size){
-        table.resize(h+1);
-        size= h+1;
-        table[h].push_front(el);
-        return true;
-    }
-    else{
-        
-        int i=0;
-        if(table[h].empty()==true){
-            table[h].push_front(el);
-            return true;
-        }
-        else{
-            list<string>::iterator str1;
-            str1=table[h].begin();
-            while(str1!=table[h].end()){
-                if((*str1)==el){
-                    return false;
-                    break;
-                }
-                else{
-                    str1++;
-                }
-            }
-            table[h].push_front(el);
-            return true;
-        }
-    }
-}
-
-template <class T>
-bool hash_table<T>::remove(T el){
-    int h=hash(el);
-    list<string>::iterator str1;
-    str1=table[h].begin();
-    while(str1!=table[h].end()){
-        if((*str1)==el){
-            table[h].remove(el);
-            return true;
-            break;
-        }
-        else{
-            str1++;
-        }
-    }
-    return false;
-}
-
-template <class T>
-bool hash_table<T>::contains(T el){
-    int h=hash(el);
-    cout << h << endl;
-    auto el1=table[h].begin();
-    while(el1!=table[h].end()){
-        if((*el1)==el){
-            return true;
-            break;
-        }
-        else{
-            el1++;
-        }
-    }
-    return false;
+int main(){
     
-}
-
-template <class T>
-int hash_table<T>::size1(){
-    return table.capacity();
-}
-hash_table<T>::~hash_table(){
-    for(size_t i=0; i<table.size(); i++){
-        table[i].clear();
-    }
-    table.clear();
-    size=0;
-    m=0;
-}
-
-
-
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    HashTable<Str> hashtab;
+    hashtab.add(Str());
     return 0;
 }

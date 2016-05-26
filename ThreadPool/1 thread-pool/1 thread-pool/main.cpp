@@ -23,6 +23,8 @@ bool isPrime(int n){
     return true;
 }
 
+
+
 int main(){
     std::srand(std::time(0));
     
